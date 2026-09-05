@@ -1,0 +1,28 @@
+{
+  "summary": "Completed backend regression and live API/UI checks. Core health, login, auth/me, dashboard, ticket/comment flow, tenant isolation, disabled integration contracts, requester portal creation, and mobile menu passed.",
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "/api/tickets and /api/tickets/{ticket_id}", "issue": "Requester role can directly list every ticket in its organization and retrieve arbitrary same-organization ticket details; requester-safe portal should restrict direct ticket reads to requester-owned tickets (or deny these routes). Requester can also post comments to arbitrary same-organization tickets through the generic comment endpoint.", "priority": "HIGH"}
+    ],
+    "minor": [
+      {"endpoint": "/openapi.json", "issue": "Live public URL returns the React SPA HTML rather than the FastAPI OpenAPI schema; /api/openapi.json returns 404. OpenAPI is therefore not available through the ingress URL."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "Ticket list/detail navigation", "issue": "React runtime overlay reports `TypeError: destroy is not a function` after navigation. Effects pass promise-returning load functions directly to useEffect (`useEffect(load, ...)`), causing React to treat the Promise as cleanup.", "selector": "Ticket list/detail routes", "priority": "HIGH"}
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": ["/app/backend/tests/test_isolation.py", "/app/backend/tests/test_runtime_phase1.py", "/app/test_reports/pytest/pytest_results_iteration.xml"],
+  "action_items": ["Restrict requester direct ticket/detail/comment access to requester-owned tickets or enforce requester-specific endpoints.", "Expose FastAPI OpenAPI under the public ingress path (for example /api/openapi.json or ingress mapping).", "Wrap promise-returning load functions in useEffect callbacks that do not return the Promise, fixing the React destroy cleanup crash."],
+  "critical_code_review_comments": ["Authorization is inconsistent: requester portal has /api/my/tickets scoping, but generic ticket and comment routes only scope organization_id and permit requester access to other employees' tickets.", "FastAPI defaults are not ingress-compatible because docs/openapi routes lack the /api prefix."],
+  "updated_files": ["/app/test_reports/iteration_1.json"],
+  "success_rate": {"backend": "90%", "frontend": "85%"},
+  "seed_data_creation": "Existing regression test created isolated temporary organizations and test comments; live UI created one TEST employee portal request.",
+  "retest_needed": true,
+  "should_call_test_agent_after_fix": true,
+  "context_for_next_testing_agent": "Four existing pytest tests passed. Teams card returned five actions and not_configured; Teams action safely returned ok=false; AI analyze and voice status were disabled as configured. Recheck requester authorization, OpenAPI routing, and React navigation cleanup after fixes.",
+  "rca of the issue": "Requester authorization gap is caused by generic ticket/detail/comment handlers filtering only organization_id while /api/my/tickets filters requester_email. React crash is caused by useEffect(load, ...) where load returns the axios Promise, which React interprets as an effect destructor. OpenAPI routing mismatch occurs because FastAPI defaults /openapi.json and /docs are not prefixed with /api while the ingress sends only /api routes to backend."
+}

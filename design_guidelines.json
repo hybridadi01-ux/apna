@@ -1,0 +1,34 @@
+{
+  "app_name": "SynapseDesk - Multi-Tenant AI-First Ticket Operations Platform",
+  "context": "dashboards_and_apps",
+  "design_archetype": "swiss_high_contrast_and_performance",
+  "typography": {
+    "heading_font": "Plus Jakarta Sans, sans-serif",
+    "body_font": "Inter, sans-serif",
+    "mono_font": "JetBrains Mono, monospace"
+  },
+  "colors": {
+    "primary": "#2563EB",
+    "primary_dark": "#1D4ED8",
+    "background_dark": "#0B0F19",
+    "surface_dark": "#111827",
+    "border_dark": "#1F2937",
+    "text_dark": "#F9FAFB",
+    "muted_dark": "#9CA3AF",
+    "accent_orange": "#F59E0B",
+    "accent_emerald": "#10B981",
+    "accent_rose": "#EF4444"
+  },
+  "grids": {
+    "dashboard_grid": "grid grid-cols-1 md:grid-cols-4 lg:grid-cols-12 gap-6"
+  },
+  "component_path": "/app/frontend/src/components/",
+  "image_urls": [
+    {
+      "category": "team_workspace",
+      "url": "https://images.unsplash.com/photo-1522071820081-009f0129c71c?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Nzd8MHwxfHNlYXJjaHwxfHxJVCUyMHN1cHBvcnQlMjBkYXNoYm9hcmQlMjBoZWxwZGVzayUyMHRlYW0lMjB3b3Jrc3BhY2V8ZW58MHx8fHwxNzg4NTg2NDk1fDA&ixlib=rb-4.1.0&q=85",
+      "description": "Team workspace collaborative session"
+    }
+  ],
+  "instructions_to_main_agent": "Build the full multi-tenant ticket management platform frontend with tenant isolation, RBAC, teams, SLA tracking, immutable audit logs, notification/event architecture, ticket details, comments, local attachments, SLA status, activity timeline, and rich dashboard analytics. Ensure all interactive elements include data-testid attributes."
+}

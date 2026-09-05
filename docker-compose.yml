@@ -1,0 +1,32 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: synapsedesk
+      POSTGRES_USER: synapsedesk
+      POSTGRES_PASSWORD: synapsedesk
+    volumes: ["postgres_data:/var/lib/postgresql/data"]
+    healthcheck: { test: ["CMD-SHELL", "pg_isready -U synapsedesk -d synapsedesk"], interval: 10s, timeout: 5s, retries: 5 }
+    restart: unless-stopped
+  backend:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgresql://synapsedesk:synapsedesk@db:5432/synapsedesk
+      JWT_SECRET: replace-this-before-production
+      CORS_ORIGINS: http://localhost
+      STORAGE_PATH: /data/uploads
+      AI_PROVIDER: none
+    volumes: ["uploads_data:/data/uploads"]
+    depends_on: { db: { condition: service_healthy } }
+    restart: unless-stopped
+  frontend:
+    build: ./frontend
+    depends_on: [backend]
+    restart: unless-stopped
+  nginx:
+    image: nginx:alpine
+    ports: ["80:80"]
+    volumes: ["./docker/nginx.conf:/etc/nginx/conf.d/default.conf:ro"]
+    depends_on: [frontend, backend]
+    restart: unless-stopped
+volumes: { postgres_data: {}, uploads_data: {} }
