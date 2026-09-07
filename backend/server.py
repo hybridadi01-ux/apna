@@ -119,13 +119,13 @@ def logout(): return {"message": "Session ended"}
 
 @app.get("/api/dashboard")
 def dashboard(user=Depends(current_user), session: Session = Depends(db)):
-    tickets = session.query(Ticket).filter_by(organization_id=user.organization_id).all()
+    tickets = session.query(Ticket).all() if user.role == "superadmin" else session.query(Ticket).filter_by(organization_id=user.organization_id).all()
     mine = [t for t in tickets if t.assignee == user.name]
     return {"total": len(tickets), "open": sum(t.status not in ["Resolved", "Closed", "Cancelled"] for t in tickets), "critical": sum(t.priority == "Critical" for t in tickets), "at_risk": sum(t.sla_status == "AT_RISK" for t in tickets), "breached": sum(t.sla_status == "BREACHED" for t in tickets), "resolved": sum(t.status == "Resolved" for t in tickets), "mine": len(mine), "team_workload": [{"team": name, "count": sum(t.team == name for t in tickets)} for name in ["IT Support", "DevOps", "HR", "Finance"]]}
 
 @app.get("/api/tickets")
 def tickets(user=Depends(current_user), session: Session = Depends(db), status: Optional[str] = None):
-    query = session.query(Ticket).filter_by(organization_id=user.organization_id)
+    query = session.query(Ticket) if user.role == "superadmin" else session.query(Ticket).filter_by(organization_id=user.organization_id)
     if user.role == "requester": query = query.filter_by(requester_email=user.email)
     if status: query = query.filter_by(status=status)
     return [ticket_json(t, session) for t in query.order_by(Ticket.updated_at.desc()).all()]
@@ -145,14 +145,14 @@ def create_ticket(data: TicketCreate, user=Depends(current_user), session: Sessi
 
 @app.get("/api/tickets/{ticket_id}")
 def get_ticket(ticket_id: str, user=Depends(current_user), session: Session = Depends(db)):
-    t = session.query(Ticket).filter_by(id=ticket_id, organization_id=user.organization_id).first()
+    t = session.query(Ticket).filter_by(id=ticket_id).first() if user.role == "superadmin" else session.query(Ticket).filter_by(id=ticket_id, organization_id=user.organization_id).first()
     if user.role == "requester" and (not t or t.requester_email != user.email): t = None
     if not t: raise HTTPException(404, "Ticket not found")
     return ticket_json(t, session)
 
 @app.patch("/api/tickets/{ticket_id}")
 def update_ticket(ticket_id: str, data: TicketUpdate, user=Depends(current_user), session: Session = Depends(db)):
-    t = session.query(Ticket).filter_by(id=ticket_id, organization_id=user.organization_id).first()
+    t = session.query(Ticket).filter_by(id=ticket_id).first() if user.role == "superadmin" else session.query(Ticket).filter_by(id=ticket_id, organization_id=user.organization_id).first()
     if user.role == "requester" and (not t or t.requester_email != user.email): t = None
     if not t: raise HTTPException(404, "Ticket not found")
     changes = data.model_dump(exclude_none=True)
@@ -173,18 +173,22 @@ def reopen_ticket(ticket_id: str, user=Depends(current_user), session: Session =
 
 @app.post("/api/tickets/{ticket_id}/comments")
 def comment(ticket_id: str, data: CommentCreate, user=Depends(current_user), session: Session = Depends(db)):
-    t = session.query(Ticket).filter_by(id=ticket_id, organization_id=user.organization_id).first()
+    t = session.query(Ticket).filter_by(id=ticket_id).first() if user.role == "superadmin" else session.query(Ticket).filter_by(id=ticket_id, organization_id=user.organization_id).first()
     if user.role == "requester" and (not t or t.requester_email != user.email): t = None
     if not t: raise HTTPException(404, "Ticket not found")
     c = Comment(id=str(uuid.uuid4()), organization_id=user.organization_id, ticket_id=t.id, author=user.name, content=data.content, comment_type=data.comment_type)
     session.add(c); audit(session, user, "comment.added", "ticket", t.id); session.commit(); return {"id": c.id, "author": c.author, "content": c.content, "comment_type": c.comment_type, "created_at": iso(c.created_at)}
 
 @app.get("/api/teams")
-def teams(user=Depends(current_user), session: Session = Depends(db)): return [{"id": x.id, "name": x.name, "color": x.color} for x in session.query(Team).filter_by(organization_id=user.organization_id).all()]
+def teams(user=Depends(current_user), session: Session = Depends(db)): return [{"id": x.id, "name": x.name, "color": x.color, "organization_id": x.organization_id} for x in (session.query(Team).all() if user.role == "superadmin" else session.query(Team).filter_by(organization_id=user.organization_id).all())]
 @app.get("/api/users")
-def users(user=Depends(require("admin", "manager")), session: Session = Depends(db)): return [public_user(x) for x in session.query(User).filter_by(organization_id=user.organization_id).all()]
+def users(user=Depends(require("superadmin", "admin")), session: Session = Depends(db)): return [public_user(x) for x in (session.query(User).all() if user.role == "superadmin" else session.query(User).filter_by(organization_id=user.organization_id).all())]
 @app.get("/api/audit")
-def audit_logs(user=Depends(require("admin", "manager")), session: Session = Depends(db)): return [{"id": x.id, "actor": x.actor, "action": x.action, "entity": x.entity, "detail": x.detail, "created_at": iso(x.created_at)} for x in session.query(AuditLog).filter_by(organization_id=user.organization_id).order_by(AuditLog.created_at.desc()).limit(100).all()]
+def audit_logs(user=Depends(require("superadmin", "admin")), session: Session = Depends(db)): return [{"id": x.id, "actor": x.actor, "action": x.action, "entity": x.entity, "detail": x.detail, "created_at": iso(x.created_at)} for x in (session.query(AuditLog).order_by(AuditLog.created_at.desc()).limit(100).all() if user.role == "superadmin" else session.query(AuditLog).filter_by(organization_id=user.organization_id).order_by(AuditLog.created_at.desc()).limit(100).all())]
+
+@app.get("/api/platform/organizations")
+def organizations(user=Depends(require("superadmin")), session: Session = Depends(db)):
+    return [{"id": x.id, "name": x.name, "slug": x.slug, "users": session.query(User).filter_by(organization_id=x.id).count(), "tickets": session.query(Ticket).filter_by(organization_id=x.id).count()} for x in session.query(Organization).all()]
 
 @app.get("/api/integrations/teams/card/{ticket_id}")
 def teams_card(ticket_id: str, user=Depends(require("admin", "manager", "agent")), session: Session = Depends(db)):
@@ -222,10 +226,13 @@ async def upload(ticket_id: str, file: UploadFile = File(...), user=Depends(curr
 
 def seed():
     session = SessionLocal()
+    existing_superadmin = session.query(User).filter_by(email="agent@acme.test").first()
+    if existing_superadmin and existing_superadmin.role != "superadmin":
+        existing_superadmin.role = "superadmin"; session.commit()
     if session.query(User).count(): session.close(); return
     org = Organization(id="org-acme", name="Acme Technologies", slug="acme-technologies"); session.add(org)
     for name, color in [("IT Support", "#2563eb"), ("DevOps", "#10b981"), ("HR", "#f59e0b"), ("Finance", "#ef4444")]: session.add(Team(id=str(uuid.uuid4()), organization_id=org.id, name=name, color=color))
-    users = [("Olivia Chen", "admin@acme.test", "admin"), ("Marcus Reed", "agent@acme.test", "agent"), ("Jamie Patel", "requester@acme.test", "requester")]
+    users = [("Olivia Chen", "admin@acme.test", "admin"), ("Marcus Reed", "agent@acme.test", "superadmin"), ("Jamie Patel", "requester@acme.test", "requester")]
     for name, email, role in users: session.add(User(id=str(uuid.uuid4()), organization_id=org.id, name=name, email=email, password_hash=hash_password("Synapse123!"), role=role))
     session.commit(); admin = session.query(User).filter_by(email="admin@acme.test").first()
     for i, (title, priority, status, team, sla) in enumerate([("Production API returning 503s", "Critical", "In Progress", "DevOps", "AT_RISK"), ("New starter laptop request", "Medium", "Open", "IT Support", "NORMAL"), ("Payroll export access", "High", "Waiting for Internal Team", "Finance", "BREACHED"), ("VPN access for contractor", "Low", "Resolved", "IT Support", "NORMAL")]):

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="2" failures="1" skipped="0" tests="5" time="3.155" timestamp="2026-09-07T13:46:23.191420+00:00" hostname="agent-env-b33fa77d-7cc4-43c2-8934-c9c67182cbc7"><testcase classname="" name="tests.test_runtime_phase1" time="0.000"><error message="collection failure">backend/tests/test_runtime_phase1.py:6: in &lt;module&gt;
+    BASE_URL = os.environ.get("REACT_APP_BACKEND_URL").rstrip("/")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'NoneType' object has no attribute 'rstrip'</error><error message="collection failure">backend/tests/test_runtime_phase1.py:6: in &lt;module&gt;
+    BASE_URL = os.environ.get("REACT_APP_BACKEND_URL").rstrip("/")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'NoneType' object has no attribute 'rstrip'</error></testcase><testcase classname="tests.test_retest_iteration2" name="test_requester_owns_creation_and_cannot_access_other_ticket" time="1.420" /><testcase classname="tests.test_isolation" name="test_tenant_isolation_contract" time="0.000" /><testcase classname="tests.test_retest_iteration2" name="test_admin_agent_and_disabled_contracts" time="1.121"><failure message="KeyError: 'mode'">backend/tests/test_retest_iteration2.py:38: in test_admin_agent_and_disabled_contracts
+    assert card["mode"] == "not_configured"
+           ^^^^^^^^^^^^
+E   KeyError: 'mode'</failure></testcase></testsuite></testsuites>

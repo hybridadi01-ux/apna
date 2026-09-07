@@ -6,6 +6,6 @@ SynapseDesk is a lightweight, self-hosted, multi-tenant ticket operations platfo
 
 Run `docker compose up --build`, then open `http://localhost`. API documentation is available at `http://localhost/api/docs`.
 
-Development seed access: `admin@acme.test`, `agent@acme.test`, and `requester@acme.test`, all using `Synapse123!`.
+Development seed access: `agent@acme.test` is Platform Super Admin, `admin@acme.test` is Organization Admin, and `requester@acme.test` is Employee / Requester. All use `Synapse123!`.
 
 The first phase includes JWT authentication, organization-scoped tickets, comments, attachments, SLA visibility, audit records, dashboard metrics, REST/OpenAPI, responsive navigation, and the AI-disabled configuration seam. See `docs/` for architecture, security, API, and deployment notes.

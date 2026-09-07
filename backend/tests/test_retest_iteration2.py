@@ -27,14 +27,14 @@ def test_requester_owns_creation_and_cannot_access_other_ticket():
         assert requests.post(f"{BASE_URL}/api/tickets/{other_id}/comments", headers=requester, json={"content": "TEST unauthorized"}, timeout=20).status_code == 404
 
 
-def test_admin_agent_and_disabled_contracts():
+def test_admin_superadmin_and_disabled_contracts():
     admin = auth("admin@acme.test")
-    agent = auth("agent@acme.test")
+    superadmin = auth("agent@acme.test")
     admin_tickets = requests.get(f"{BASE_URL}/api/tickets", headers=admin, timeout=20)
     assert admin_tickets.status_code == 200 and admin_tickets.json()
-    assert requests.get(f"{BASE_URL}/api/tickets", headers=agent, timeout=20).status_code == 200
+    assert requests.get(f"{BASE_URL}/api/tickets", headers=superadmin, timeout=20).status_code == 200
     ticket_id = admin_tickets.json()[0]["id"]
-    card = requests.get(f"{BASE_URL}/api/integrations/teams/card/{ticket_id}", headers=agent, timeout=20).json()
+    card = requests.get(f"{BASE_URL}/api/integrations/teams/card/{ticket_id}", headers=admin, timeout=20).json()
     assert card["mode"] == "not_configured"
     assert [a["title"] for a in card["card"]["actions"]] == ["Acknowledge", "Working", "Waiting", "Resolved", "Add Update"]
     ai = requests.post(f"{BASE_URL}/api/ai/analyze/{ticket_id}", headers=admin, timeout=20).json()
